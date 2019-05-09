@@ -12,7 +12,7 @@ class Colormax
   //****************************************************************************************************
   // Fields / Properties
   //****************************************************************************************************
-  // Fields
+  // Fields  
   private String label;
   private boolean isAvailable = false;
   //private int isBusy = 0;
@@ -28,15 +28,17 @@ class Colormax
   
   // Status Definitions
   final String idle = "idle";
-  final String gettingTempTable = "gettingTempTable";
-  final String settingIlluminationFactor = "settingIlluminationFactor";
+  final String readingTmpTbl = "readingTmpTbl";
+  final String readingAlmTbl = "readingAlmTbl";
+  final String calibratingIlluminationFactor = "calibratingIlluminationFactor";
   final String updating = "updating";
   final String calibrating = "calibrating";
   final String retakingPoint = "retakingPoint";
-  final String[] statuses = {idle, gettingTempTable, settingIlluminationFactor, updating, calibrating, retakingPoint};
+  final String transferringData = "transferringData";
+  final String[] statuses = {idle, readingTmpTbl, readingAlmTbl, calibratingIlluminationFactor, updating, calibrating, retakingPoint, transferringData};
   
   // Colormax status
-  private String status = idle;     // to keep track of what this colormax is currently doing
+  private String status = idle;     // to keep track of what this colormax is currently doing 
   
   // Colormax properties
   private String identity;          // stores raw colormax response
@@ -463,9 +465,9 @@ class Colormax
     illuminationFactor = inIlluminationFactor;
   }
   
-  // Current Data ****************************************
+  // Data ****************************************
   // !d command
-  void parseCurrentData(String inCurrentData){
+  void parseData(String inCurrentData){
     currentData = inCurrentData;
     red = Integer.parseInt(inCurrentData.substring(3, 7), 16);
     green = Integer.parseInt(inCurrentData.substring(8, 12), 16);
@@ -611,18 +613,17 @@ class Colormax
   }
   
   //Weird, should be application level, methods **************************************************
-  
-  void updateInfo(){
-    readCLT();
-    delay(commandDelay);
-    readSettings();
-    delay(commandDelay);
-    readIdentity();
-    delay(commandDelay);
-    readVersion();
-    delay(commandDelay);
-    readIlluminationFactor();
-  }
+  //void updateInfo(){
+  //  readCLT();
+  //  delay(commandDelay);
+  //  readSettings();
+  //  delay(commandDelay);
+  //  readIdentity();
+  //  delay(commandDelay);
+  //  readVersion();
+  //  delay(commandDelay);
+  //  readIlluminationFactor();
+  //}
   
   void stopLongTest() {
     timer.cancel();
@@ -1170,6 +1171,13 @@ class Colormax
     serial.write(13);
   }
   
+  void parseIlluminationAlgorithm(String inIlluminationAlgorithm){
+    ledMa = inIlluminationAlgorithm.substring(3, 7);
+    ledMaFloat = (float) Integer.parseInt(ledMa, 16) / 64 / 1023 * 5 / 0.08; // for some reason this is how we convert to mA
+    ledDac = inIlluminationAlgorithm.substring(8, 12);
+    ledStability = inIlluminationAlgorithm.substring(13,14);
+  }
+  
   void readPhase(){
     serial.write("!l");
     serial.write(13);
@@ -1230,5 +1238,17 @@ class Colormax
     
     
   }
+
+  void readTemperature(){
+    serial.write("!w\r");
+  }
+
+  void parseTemperature(String inTemperature){
+    short tempTemp = (short) Integer.parseInt(inTemperature.substring(3,7), 16);  // Convert raw input into a 16-bit signed integer
+    temperature = (float) tempTemp / 16;                                          // Convert to floating point ºC
+  }
+
+
+
 // @@@@@ End of Object @@@@@  
 }

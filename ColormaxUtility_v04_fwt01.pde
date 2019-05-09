@@ -198,8 +198,20 @@ void populateColormaxes() {
 // Update Colormax Info **************************************************
 void updateColormaxInfo(Colormax inColormax) {
   if (inColormax.getSerial() != null) {
-    inColormax.updateInfo();
-    delay(100);
+    final int commandDelay = 25;
+    
+    // Each command needs a short delay (at least 25ms) to get a response.
+    // And I'm too dumb to figure out how to make an array of methods to call with a for(){} loop
+    // No need for so many lines of code, so I've put the delay in-line with each method call
+    // like so: inColormax.readCLT();delay(commandDelay);
+    inColormax.readData();delay(commandDelay);
+    inColormax.readTemperature();delay(commandDelay);
+    inColormax.readIlluminationAlgorithm();delay(commandDelay);
+    inColormax.readSettings();delay(commandDelay);
+    inColormax.readIdentity();delay(commandDelay);
+    inColormax.readVersion();delay(commandDelay);
+    inColormax.readIlluminationFactor();delay(commandDelay);
+    
     lblRedPercentData.setText(String.format("%.2f", inColormax.getRedPercent() - 0.005));
     lblGreenPercentData.setText(String.format("%.2f", inColormax.getGreenPercent() - 0.005));
     lblBluePercentData.setText(String.format("%.2f", inColormax.getBluePercent() - 0.005));
@@ -562,18 +574,31 @@ void serialEvent(Serial inPort) {
     return;
   }
 
+
+  if (inString.startsWith("!a")) {
+    //println("got ia");
+    //colormaxes[listColormaxSelect.getSelectedIndex()].parseIlluminationSetting(inString);
+    return;
+  }
+
   if (inString.startsWith("!d")) {
     //println(inString);
-    if(colormaxes[listColormaxSelect.getSelectedIndex()].getStatus() == colormaxes[listColormaxSelect.getSelectedIndex()].settingIlluminationFactor) {
+    if(colormaxes[listColormaxSelect.getSelectedIndex()].getStatus() == colormaxes[listColormaxSelect.getSelectedIndex()].calibratingIlluminationFactor) {
       //int blue = Integer.parseInt(blueChannel, 16);
       colormaxes[listColormaxSelect.getSelectedIndex()].lightAdjustmentCalibrateContinue(Integer.parseInt(inString.substring(13, 17), 16));
     }
+    else {
+      colormaxes[listColormaxSelect.getSelectedIndex()].parseData(inString);
+    }
+    return;
+  }
+  
+  if (inString.startsWith("!g")) {
+    colormaxes[listColormaxSelect.getSelectedIndex()].parseIlluminationAlgorithm(inString);
     return;
   }
 
   if (inString.startsWith("!h")) {
-    //println("got clt");
-    //println(inString);
     colormaxes[listColormaxSelect.getSelectedIndex()].parseClt(inString);
     return;
   }
@@ -596,12 +621,6 @@ void serialEvent(Serial inPort) {
     return;
   }
 
-  if (inString.startsWith("!a")) {
-    //println("got ia");
-    //colormaxes[listColormaxSelect.getSelectedIndex()].parseIlluminationSetting(inString);
-    return;
-  }
-
   if (inString.startsWith("!O")) {
     
   }
@@ -609,7 +628,11 @@ void serialEvent(Serial inPort) {
   if(inString.startsWith("!D")){
     colormaxes[listColormaxSelect.getSelectedIndex()].parseUDID(inString);
   }
-
+  
+  if(inString.startsWith("!w")){
+    colormaxes[listColormaxSelect.getSelectedIndex()].parseTemperature(inString);
+  }
+  
   // @@@@@@@@@@ End of serialEvent() @@@@@@@@@@
 }
 
